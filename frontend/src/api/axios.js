@@ -7,4 +7,26 @@ const api = axios.create({
   }
 });
 
+// Add token from localStorage on init
+const token = localStorage.getItem('token');
+if (token) {
+  api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+}
+
+// Response interceptor - handle 401 by redirecting to login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      delete api.defaults.headers.common['Authorization'];
+      // Only redirect if not already on login page
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

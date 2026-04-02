@@ -21,6 +21,11 @@ const programSchema = new mongoose.Schema({
     enum: ['Regular', 'Lateral'],
     required: [true, 'Entry type is required']
   },
+  admissionMode: {
+    type: String,
+    enum: ['Government', 'Management', 'Both'],
+    default: 'Both'
+  },
   academicYear: {
     type: String, // e.g., '2026-2027'
     required: [true, 'Academic year is required']

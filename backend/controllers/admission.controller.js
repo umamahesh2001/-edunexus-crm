@@ -9,34 +9,53 @@ const Counter = require('../models/Counter');
 const generateAdmissionNumber = async (programId, quotaType) => {
   const program = await Program.findById(programId).populate('departmentId');
   if(!program) throw new Error('Program not found');
-  
+
   // Format: INST/YYYY/COURSE/BRANCH/QUOTA/XXXX
-  // Normally we'd look up Institution from Department -> Campus -> Institution
-  // For simplicity, hardcoding INST or fetching first Institution
   const institution = await Institution.findOne();
   const instName = institution ? institution.name.substring(0, 4).toUpperCase() : 'INST';
-  
+
   const year = program.academicYear.split('-')[0] || new Date().getFullYear();
   const course = program.courseType.toUpperCase();
   const branch = program.name.substring(0, 4).toUpperCase();
-  
+
   const prefix = `${instName}/${year}/${course}/${branch}/${quotaType.toUpperCase()}`;
-  
+
   // Atomic counter
   const counter = await Counter.findByIdAndUpdate(
     { _id: prefix },
     { $inc: { seq: 1 } },
-    { new: true, upsert: true } // Create if doesn't exist
+    { new: true, upsert: true }
   );
-  
+
   const seqStr = counter.seq.toString().padStart(4, '0');
   return `${prefix}/${seqStr}`;
 };
 
-// Seat Allocation API
+// Seat Allocation API - supports both Government and Management flows
 exports.allocateSeat = async (req, res) => {
   try {
-    const { applicantId, programId, quotaType } = req.body;
+    const { applicantId, programId, quotaType, admissionMode, allotmentNumber } = req.body;
+
+    // Validate admission mode
+    if (!admissionMode || !['Government', 'Management'].includes(admissionMode)) {
+      return res.status(400).json({ error: 'Admission mode must be Government or Management' });
+    }
+
+    // Government flow requires allotment number
+    if (admissionMode === 'Government') {
+      if (!allotmentNumber || !allotmentNumber.trim()) {
+        return res.status(400).json({ error: 'Allotment number is required for Government admissions' });
+      }
+      // Government flow only allows KCET or COMEDK quotas
+      if (!['KCET', 'COMEDK'].includes(quotaType)) {
+        return res.status(400).json({ error: 'Government admissions only support KCET or COMEDK quotas' });
+      }
+    }
+
+    // Management flow only allows Management quota
+    if (admissionMode === 'Management' && quotaType !== 'Management') {
+      return res.status(400).json({ error: 'Management admissions only support Management quota' });
+    }
 
     const applicant = await Applicant.findById(applicantId);
     if (!applicant) return res.status(404).json({ error: 'Applicant not found' });
@@ -51,13 +70,20 @@ exports.allocateSeat = async (req, res) => {
       return res.status(400).json({ error: 'Applicant already has an admission allocated.' });
     }
 
+    // Check allotment number uniqueness for government flow
+    if (admissionMode === 'Government' && allotmentNumber) {
+      const existingAllotment = await Admission.findOne({ allotmentNumber: allotmentNumber.trim() });
+      if (existingAllotment) {
+        return res.status(400).json({ error: 'This allotment number has already been used.' });
+      }
+    }
+
     // Attempt ATOMIC Update of Quota
-    // Race Condition Prevention: findOneAndUpdate with condition filledSeats < totalSeats
     const quota = await Quota.findOneAndUpdate(
-      { 
-        programId: programId, 
+      {
+        programId: programId,
         type: quotaType,
-        $expr: { $lt: ["$filledSeats", "$totalSeats"] } // Atomic check
+        $expr: { $lt: ["$filledSeats", "$totalSeats"] }
       },
       { $inc: { filledSeats: 1 } },
       { new: true }
@@ -67,11 +93,13 @@ exports.allocateSeat = async (req, res) => {
       return res.status(400).json({ error: 'Quota full or not found. Cannot allocate seat.' });
     }
 
-    // Quota incremented atomically, safe to create Admission record
+    // Create Admission record
     const admission = new Admission({
       applicantId,
       programId,
       quotaType,
+      admissionMode,
+      allotmentNumber: admissionMode === 'Government' ? allotmentNumber.trim() : null,
       status: 'Allocated'
     });
 
@@ -86,7 +114,7 @@ exports.allocateSeat = async (req, res) => {
 // Admission Confirmation API
 exports.confirmAdmission = async (req, res) => {
   try {
-    const { id } = req.params; // Admission ID
+    const { id } = req.params;
     const { feeStatus } = req.body;
 
     if (feeStatus !== 'Paid') {
@@ -95,18 +123,17 @@ exports.confirmAdmission = async (req, res) => {
 
     const admission = await Admission.findById(id);
     if (!admission) return res.status(404).json({ error: 'Admission not found' });
-    
+
     if (admission.status === 'Confirmed') {
         return res.status(400).json({ error: 'Admission already confirmed' });
     }
 
-    // Generate strict Unique Array
     const admissionNumber = await generateAdmissionNumber(admission.programId, admission.quotaType);
 
     admission.feeStatus = 'Paid';
     admission.status = 'Confirmed';
     admission.admissionNumber = admissionNumber;
-    
+
     await admission.save();
 
     res.json(admission);
@@ -136,4 +163,4 @@ exports.getAllAdmissions = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}
+};

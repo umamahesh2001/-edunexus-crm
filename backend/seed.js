@@ -6,6 +6,7 @@ const Department = require('./models/Department');
 const Program = require('./models/Program');
 const Quota = require('./models/Quota');
 const Applicant = require('./models/Applicant');
+const User = require('./models/User');
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/admission-crm';
 
@@ -21,6 +22,31 @@ const seedData = async () => {
     await Program.deleteMany();
     await Quota.deleteMany();
     await Applicant.deleteMany();
+    await User.deleteMany();
+
+    // Seed Users (3 roles)
+    const admin = await User.create({
+      name: 'Admin User',
+      email: 'admin@edunexus.com',
+      password: 'admin123',
+      role: 'Admin'
+    });
+
+    await User.create({
+      name: 'Admission Officer',
+      email: 'officer@edunexus.com',
+      password: 'officer123',
+      role: 'Admission Officer'
+    });
+
+    await User.create({
+      name: 'Management Viewer',
+      email: 'management@edunexus.com',
+      password: 'mgmt123',
+      role: 'Management'
+    });
+
+    console.log('Users seeded successfully');
 
     // 1. Institution
     const inst = await Institution.create({ name: 'Global Institute of Technology' });
@@ -37,6 +63,7 @@ const seedData = async () => {
       departmentId: cseDept._id,
       courseType: 'UG',
       entryType: 'Regular',
+      admissionMode: 'Both',
       academicYear: '2026-2027',
       totalIntake: 60
     });
@@ -55,6 +82,10 @@ const seedData = async () => {
     ]);
 
     console.log('Seed data successfully inserted!');
+    console.log('\n--- Login Credentials ---');
+    console.log('Admin:             admin@edunexus.com / admin123');
+    console.log('Admission Officer: officer@edunexus.com / officer123');
+    console.log('Management:        management@edunexus.com / mgmt123');
     process.exit();
   } catch (error) {
     console.error('Error with seed data', error);

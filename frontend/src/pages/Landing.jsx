@@ -58,11 +58,11 @@ const Landing = () => {
             The ultimate admission management CRM engineered to track, allocate, and verify applicants seamlessly. Unify your institution's growth with intelligent telemetry.
           </p>
           <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-            <Link 
-              to="/app" 
+            <Link
+              to="/login"
               className="bg-slate-900 text-white font-bold py-4 px-10 rounded-xl hover:bg-slate-800 transition-colors shadow-xl shadow-slate-900/20 uppercase tracking-widest text-sm"
             >
-              Enter System
+              Sign In
             </Link>
             <a 
               href="#about"

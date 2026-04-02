@@ -47,7 +47,7 @@ const MasterSetup = () => {
   const [institutionForm, setInstitutionForm] = useState({ name: '' });
   const [campusForm, setCampusForm] = useState({ name: '', institutionId: '' });
   const [deptForm, setDeptForm] = useState({ name: '', campusId: '' });
-  const [programForm, setProgramForm] = useState({ name: '', departmentId: '', courseType: 'UG', entryType: 'Regular', academicYear: '2026-2027', totalIntake: '' });
+  const [programForm, setProgramForm] = useState({ name: '', departmentId: '', courseType: 'UG', entryType: 'Regular', admissionMode: 'Both', academicYear: '2026-2027', totalIntake: '' });
   const [quotaForm, setQuotaForm] = useState({ programId: '', kcet: '', comedk: '', management: '' });
 
   const resetForms = useCallback(() => {
@@ -56,7 +56,7 @@ const MasterSetup = () => {
     setInstitutionForm({ name: '' });
     setCampusForm({ name: '', institutionId: '' });
     setDeptForm({ name: '', campusId: '' });
-    setProgramForm({ name: '', departmentId: '', courseType: 'UG', entryType: 'Regular', academicYear: '2026-2027', totalIntake: '' });
+    setProgramForm({ name: '', departmentId: '', courseType: 'UG', entryType: 'Regular', admissionMode: 'Both', academicYear: '2026-2027', totalIntake: '' });
     setQuotaForm({ programId: '', kcet: '', comedk: '', management: '' });
   }, []);
 
@@ -122,7 +122,7 @@ const MasterSetup = () => {
     if (endpoint === 'institutions') setInstitutionForm({ name: item.name });
     if (endpoint === 'campuses') setCampusForm({ name: item.name, institutionId: item.institutionId?._id || item.institutionId });
     if (endpoint === 'departments') setDeptForm({ name: item.name, campusId: item.campusId?._id || item.campusId });
-    if (endpoint === 'programs') setProgramForm({ name: item.name, departmentId: item.departmentId?._id || item.departmentId, courseType: item.courseType, entryType: item.entryType, academicYear: item.academicYear, totalIntake: item.totalIntake });
+    if (endpoint === 'programs') setProgramForm({ name: item.name, departmentId: item.departmentId?._id || item.departmentId, courseType: item.courseType, entryType: item.entryType, admissionMode: item.admissionMode || 'Both', academicYear: item.academicYear, totalIntake: item.totalIntake });
   };
 
   if (isLoading) return <div className="flex justify-center py-20"><div className="animate-spin h-8 w-8 border-b-2 border-indigo-600 rounded-full"></div></div>;
@@ -324,6 +324,10 @@ const MasterSetup = () => {
                     <label className="block text-sm font-bold text-slate-700 mb-2">Entry Type</label>
                     <CustomSelect options={[{value: 'Regular', label: 'Regular'}, {value: 'Lateral', label: 'Lateral'}]} value={programForm.entryType} onChange={v => setProgramForm({...programForm, entryType: v})} />
                   </div>
+                  <div className="relative z-10">
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Admission Mode</label>
+                    <CustomSelect options={[{value: 'Government', label: 'Government'}, {value: 'Management', label: 'Management'}, {value: 'Both', label: 'Both'}]} value={programForm.admissionMode} onChange={v => setProgramForm({...programForm, admissionMode: v})} />
+                  </div>
                 </div>
                 <button disabled={saveMutation.isPending || !programForm.departmentId} className="flex items-center justify-center w-full px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition-all disabled:opacity-50">
                   {saveMutation.isPending ? <Loader2 size={18} className="animate-spin mr-2" /> : <Save size={18} className="mr-2" />} 
@@ -439,7 +443,7 @@ const MasterSetup = () => {
                               {item.name}
                               <span className="text-[10px] bg-indigo-100 text-indigo-700 font-bold ml-2 px-1.5 py-0.5 rounded uppercase">{item.courseType}</span>
                             </div>
-                            <div className="text-xs font-medium text-slate-500 mt-1">{item.departmentId?.name} <span className="mx-1 text-slate-300">|</span> Intake: <span className="font-bold text-slate-700">{item.totalIntake}</span></div>
+                            <div className="text-xs font-medium text-slate-500 mt-1">{item.departmentId?.name} <span className="mx-1 text-slate-300">|</span> Intake: <span className="font-bold text-slate-700">{item.totalIntake}</span> <span className="mx-1 text-slate-300">|</span> Mode: <span className="font-bold text-slate-700">{item.admissionMode || 'Both'}</span></div>
                           </>
                         )}
                         {activeTab === 'quota' && (

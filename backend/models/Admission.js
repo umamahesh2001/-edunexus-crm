@@ -17,6 +17,15 @@ const admissionSchema = new mongoose.Schema({
     enum: ['KCET', 'COMEDK', 'Management'],
     required: [true, 'Quota type is required']
   },
+  admissionMode: {
+    type: String,
+    enum: ['Government', 'Management'],
+    required: [true, 'Admission mode is required']
+  },
+  allotmentNumber: {
+    type: String,
+    default: null // Required only for Government admissions
+  },
   admissionNumber: {
     type: String,
     unique: true,

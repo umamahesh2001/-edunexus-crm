@@ -75,9 +75,19 @@ const AdmissionConfirmation = () => {
                   </td>
                   <td className="px-6 py-5">
                     <div className="font-bold text-slate-800 text-sm">{adm.programId?.name}</div>
-                    <div className="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-slate-100 text-slate-600 mt-1 border border-slate-200">
-                      {adm.quotaType}
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-slate-100 text-slate-600 border border-slate-200">
+                        {adm.quotaType}
+                      </span>
+                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase border ${
+                        adm.admissionMode === 'Government' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-violet-50 text-violet-700 border-violet-200'
+                      }`}>
+                        {adm.admissionMode || 'N/A'}
+                      </span>
                     </div>
+                    {adm.allotmentNumber && (
+                      <div className="text-xs text-slate-500 mt-1 font-mono">Allot: {adm.allotmentNumber}</div>
+                    )}
                   </td>
                   <td className="px-6 py-5">
                     {adm.admissionNumber ? (
